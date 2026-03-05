@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EpicQuest</title>
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
             💰 <span id="hero-gold">0</span>
         </div>
 
-        <header class="hud-panel panel">
+        <header class="hud-panel panel mt-hud">
             <div class="hud-content">
                 <div class="hud-avatar-glow">
                     <span id="hero-avatar" class="avatar">🧙‍♂️</span>
@@ -54,7 +54,11 @@
                 <h2 class="section-title text-yellow mt-15">⏳ Daily Reset & Potions</h2>
                 <div class="divider"></div>
                 <div class="text-center text-gray mt-10">Time until reset: <span id="countdown-timer">00:00:00</span></div>
-                <div class="potion-container mt-15" onclick="usePotion()">🧪</div>
+                
+                <div class="potions-area mt-15">
+                    <div class="potion-icon pointer" onclick="openModal('potion-modal')">🧪</div>
+                    <div id="potion-list" class="potion-list flex-row"></div>
+                </div>
             </div>
 
             <div id="page-future" class="page-content">
@@ -75,11 +79,14 @@
                 <div class="input-row mt-10">
                     <input type="text" id="prophecy-title" placeholder="Task Name" class="flex-grow">
                     <input type="number" id="prophecy-gold" placeholder="Gold" class="w-20">
-                    <select id="prophecy-deadline" class="w-30">
+                    <select id="prophecy-deadline" class="w-30" onchange="checkCustomDate(this.value)">
                         <option value="eternal">∞ Eternal</option>
-                        <option value="3">3 Days</option>
-                        <option value="7">7 Days</option>
+                        <option value="7">1 Week</option>
+                        <option value="14">2 Weeks</option>
+                        <option value="30">1 Month</option>
+                        <option value="custom">Custom...</option>
                     </select>
+                    <input type="date" id="custom-date-input" class="hidden w-30">
                     <button class="btn-icon" onclick="addQuest('prophecy')">+</button>
                 </div>
                 <div id="prophecy-list" class="list-container mt-10"></div>
@@ -114,7 +121,7 @@
             <div id="page-shop" class="page-content">
                 <div class="flex-between">
                     <h1 class="page-title text-yellow">🛒 Item Shop</h1>
-                    <span class="admin-icon pointer text-gray" onclick="openModal('admin-modal')">⚙️</span>
+                    <span class="admin-icon pointer text-gray" onclick="toggleAdminMode()">⚙️</span>
                 </div>
                 <div class="divider"></div>
                 
@@ -137,8 +144,6 @@
                         <div class="divider-thin"></div>
                         <div class="stat-row"><span>HP:</span> <span class="text-yellow" id="stat-hp">100/100</span></div>
                         <div class="divider-thin"></div>
-                        <div class="stat-row"><span>Quests Completed:</span> <span class="text-yellow" id="stat-quests">0</span></div>
-                        <div class="divider-thin"></div>
                         <div class="stat-row"><span>Gold:</span> <span class="text-yellow" id="stat-gold">0</span></div>
                     </div>
                 </div>
@@ -153,22 +158,17 @@
                 <h2 class="text-center text-yellow mt-10">📊 Statistics</h2>
                 <div class="stats-grid mt-10">
                     <div class="stat-card panel text-center">
-                        <p class="text-gray text-sm">Total Battles Won</p>
-                        <h2 class="text-yellow huge-number" id="stat-battles">0</h2>
+                        <p class="text-gray text-sm">Quests (Today)</p>
+                        <h2 class="text-yellow huge-number" id="stat-today">0</h2>
                     </div>
                     <div class="stat-card panel text-center">
-                        <p class="text-gray text-sm">Longest Streak</p>
-                        <h2 class="text-yellow huge-number" id="stat-streak">0</h2>
+                        <p class="text-gray text-sm">Quests (Week)</p>
+                        <h2 class="text-yellow huge-number" id="stat-week">0</h2>
                     </div>
                     <div class="stat-card panel text-center">
-                        <p class="text-gray text-sm">HP Healed</p>
+                        <p class="text-gray text-sm">HP Healed (Today)</p>
                         <h2 class="text-yellow huge-number" id="stat-healed">0</h2>
                     </div>
-                </div>
-
-                <div class="footer text-center mt-20">
-                    <p class="text-gray text-sm">Version: v2.0</p>
-                    <button class="btn-primary mt-5" onclick="location.reload()">🔄 Force Update / Reload</button>
                 </div>
             </div>
 
@@ -181,6 +181,34 @@
             <div class="nav-item" data-target="page-shop">🛒<br>Shop</div>
             <div class="nav-item" data-target="page-profile">👤<br>Profile</div>
         </nav>
+
+        <div id="potion-modal" class="modal-overlay hidden">
+            <div class="modal-content panel">
+                <div class="flex-between">
+                    <h2 class="text-yellow">🧪 Brew Potion</h2>
+                    <span class="pointer text-gray" onclick="closeModal('potion-modal')">✕</span>
+                </div>
+                <div class="divider"></div>
+                <input type="text" id="new-potion-name" placeholder="Recipe (e.g., Meditate 30m)" class="w-full mt-10">
+                <input type="number" id="new-potion-hp" placeholder="+HP Amount" class="w-full mt-10">
+                <button class="btn-primary w-full mt-15" onclick="addPotion()">Brew!</button>
+            </div>
+        </div>
+
+        <div id="edit-quest-modal" class="modal-overlay hidden">
+            <div class="modal-content panel">
+                <div class="flex-between">
+                    <h2 class="text-yellow">🖋️ Edit Quest</h2>
+                    <span class="pointer text-gray" onclick="closeModal('edit-quest-modal')">✕</span>
+                </div>
+                <div class="divider"></div>
+                <input type="hidden" id="edit-quest-id">
+                <input type="hidden" id="edit-quest-type"> <input type="hidden" id="edit-boss-id">
+                <input type="text" id="edit-quest-title" class="w-full mt-10">
+                <input type="number" id="edit-quest-gold" class="w-full mt-10">
+                <button class="btn-primary w-full mt-15" onclick="saveEditedQuest()">Save Changes</button>
+            </div>
+        </div>
 
         <div id="boss-modal" class="modal-overlay hidden">
             <div class="modal-content panel">
@@ -201,18 +229,15 @@
         <div id="admin-modal" class="modal-overlay hidden">
             <div class="modal-content panel">
                 <div class="flex-between">
-                    <h2 class="text-yellow">⚙️ Shop Admin</h2>
+                    <h2 class="text-yellow">⚙️ Edit Item</h2>
                     <span class="pointer text-gray" onclick="closeModal('admin-modal')">✕</span>
                 </div>
                 <div class="divider"></div>
-                <input type="text" id="admin-id" placeholder="id (unique)" class="w-full mt-10">
+                <input type="hidden" id="admin-id">
                 <input type="text" id="admin-name" placeholder="name" class="w-full mt-10">
                 <input type="number" id="admin-cost" placeholder="cost" class="w-full mt-10">
                 <input type="text" id="admin-desc" placeholder="description" class="w-full mt-10">
-                <div class="input-row mt-15">
-                    <button class="btn-primary flex-grow" onclick="saveShopItem()">Save</button>
-                    <button class="btn-primary flex-grow" onclick="document.querySelectorAll('#admin-modal input').forEach(i=>i.value='')">Clear</button>
-                </div>
+                <button class="btn-primary w-full mt-15" onclick="saveShopItem()">Save</button>
             </div>
         </div>
 
