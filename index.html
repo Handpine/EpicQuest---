@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EpicQuest</title>
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -41,13 +41,17 @@
                 <h1 class="page-title text-yellow">📜 Tavern Bounty Board</h1>
                 <div class="divider"></div>
                 <div class="input-row">
-                    <input type="text" id="quest-title" placeholder="Task Name" class="flex-grow">
-                    <input type="number" id="quest-gold" placeholder="Gold" class="w-20">
+                    <input type="text" id="quest-title" placeholder="Task Name" class="flex-grow epic-input">
+                    <input type="number" id="quest-gold" placeholder="Gold" class="w-20 epic-input">
                     <button class="btn-primary" onclick="addQuest('active')">Post</button>
                 </div>
                 
-                <h2 class="section-title text-yellow mt-15">⚔️ Active Quests</h2>
+                <div class="flex-between mt-15 align-center">
+                    <h2 class="section-title text-yellow m-0">⚔️ Active Quests</h2>
+                    <span class="pointer edit-toggle-icon" id="toggle-edit-btn" onclick="toggleActiveQuestEdit()">✒️</span>
+                </div>
                 <div class="divider"></div>
+                
                 <div id="active-quest-list" class="list-container"></div>
                 <div id="empty-active" class="empty-state">No active quests yet...</div>
 
@@ -67,9 +71,9 @@
 
                 <h2 class="section-title text-yellow">🌅 Tomorrow's Fate</h2>
                 <div class="input-row mt-10">
-                    <input type="text" id="tomorrow-title" placeholder="Task Name" class="flex-grow">
-                    <input type="number" id="tomorrow-gold" placeholder="Gold" class="w-20">
-                    <button class="btn-icon" onclick="addQuest('tomorrow')">+</button>
+                    <input type="text" id="tomorrow-title" placeholder="Task Name" class="flex-grow epic-input">
+                    <input type="number" id="tomorrow-gold" placeholder="Gold" class="w-20 epic-input">
+                    <button class="btn-icon" onclick="addQuest('tomorrow')">✨</button>
                 </div>
                 <div id="tomorrow-list" class="list-container mt-10"></div>
                 <div id="empty-tomorrow" class="empty-state">No fate sealed for tomorrow...</div>
@@ -77,29 +81,29 @@
                 <h2 class="section-title text-yellow mt-15">📜 Prophecies</h2>
                 <div class="divider"></div>
                 <div class="input-row mt-10">
-                    <input type="text" id="prophecy-title" placeholder="Task Name" class="flex-grow">
-                    <input type="number" id="prophecy-gold" placeholder="Gold" class="w-20">
-                    <select id="prophecy-deadline" class="w-30" onchange="checkCustomDate(this.value)">
+                    <input type="text" id="prophecy-title" placeholder="Task Name" class="flex-grow epic-input">
+                    <input type="number" id="prophecy-gold" placeholder="Gold" class="w-20 epic-input">
+                    <select id="prophecy-deadline" class="w-30 epic-input" onchange="checkCustomDate(this.value)">
                         <option value="eternal">∞ Eternal</option>
                         <option value="7">1 Week</option>
                         <option value="14">2 Weeks</option>
                         <option value="30">1 Month</option>
                         <option value="custom">Custom...</option>
                     </select>
-                    <input type="date" id="custom-date-input" class="hidden w-30">
-                    <button class="btn-icon" onclick="addQuest('prophecy')">+</button>
+                    <input type="date" id="custom-date-input" class="hidden w-30 epic-input">
+                    <button class="btn-icon" onclick="addQuest('prophecy')">✨</button>
                 </div>
                 <div id="prophecy-list" class="list-container mt-10"></div>
                 <div id="empty-prophecy" class="empty-state">The future is clouded...</div>
 
                 <div class="accordion panel mt-15">
-                    <h2 class="section-title text-yellow pointer" onclick="toggleAccordion('backlog')">
+                    <h2 class="section-title text-yellow pointer m-0" onclick="toggleAccordion('backlog')">
                         <span id="backlog-icon">▼</span> 📦 The Archives (Backlog)
                     </h2>
                     <div id="backlog-content" class="accordion-content">
                         <div class="divider"></div>
                         <div class="input-row mt-10">
-                            <input type="text" id="backlog-title" placeholder="Task Name" class="flex-grow">
+                            <input type="text" id="backlog-title" placeholder="Task Name" class="flex-grow epic-input">
                             <button class="btn-icon" onclick="addQuest('backlog')">+</button>
                         </div>
                         <div id="backlog-list" class="list-container mt-10"></div>
@@ -120,11 +124,21 @@
 
             <div id="page-shop" class="page-content">
                 <div class="flex-between">
-                    <h1 class="page-title text-yellow">🛒 Item Shop</h1>
-                    <span class="admin-icon pointer text-gray" onclick="toggleAdminMode()">⚙️</span>
+                    <h1 class="page-title text-yellow m-0">🛒 Item Shop</h1>
+                    <span class="admin-icon pointer text-gray" id="shop-admin-btn" onclick="toggleAdminMode()">⚙️</span>
                 </div>
                 <div class="divider"></div>
                 
+                <div id="shop-admin-top-form" class="panel mb-15 hidden" style="border-color: var(--magic-blue);">
+                    <h3 class="text-yellow mb-10" style="font-family: 'Cinzel';">Forge New Item</h3>
+                    <div class="input-row mb-5">
+                        <input type="text" id="add-item-name" placeholder="Item Name" class="flex-grow epic-input">
+                        <input type="number" id="add-item-cost" placeholder="Gold" class="w-20 epic-input">
+                    </div>
+                    <input type="text" id="add-item-desc" placeholder="Description (Optional)" class="w-full mb-10 epic-input">
+                    <button class="btn-primary w-full" onclick="addNewShopItem()">Create Item</button>
+                </div>
+
                 <div id="shop-grid" class="shop-grid mt-10"></div>
             </div>
 
@@ -189,8 +203,8 @@
                     <span class="pointer text-gray" onclick="closeModal('potion-modal')">✕</span>
                 </div>
                 <div class="divider"></div>
-                <input type="text" id="new-potion-name" placeholder="Recipe (e.g., Meditate 30m)" class="w-full mt-10">
-                <input type="number" id="new-potion-hp" placeholder="+HP Amount" class="w-full mt-10">
+                <input type="text" id="new-potion-name" placeholder="Recipe (e.g., Meditate 30m)" class="w-full mt-10 epic-input">
+                <input type="number" id="new-potion-hp" placeholder="+HP Amount" class="w-full mt-10 epic-input">
                 <button class="btn-primary w-full mt-15" onclick="addPotion()">Brew!</button>
             </div>
         </div>
@@ -203,9 +217,10 @@
                 </div>
                 <div class="divider"></div>
                 <input type="hidden" id="edit-quest-id">
-                <input type="hidden" id="edit-quest-type"> <input type="hidden" id="edit-boss-id">
-                <input type="text" id="edit-quest-title" class="w-full mt-10">
-                <input type="number" id="edit-quest-gold" class="w-full mt-10">
+                <input type="hidden" id="edit-quest-type"> 
+                <input type="hidden" id="edit-boss-id">
+                <input type="text" id="edit-quest-title" class="w-full mt-10 epic-input">
+                <input type="number" id="edit-quest-gold" class="w-full mt-10 epic-input">
                 <button class="btn-primary w-full mt-15" onclick="saveEditedQuest()">Save Changes</button>
             </div>
         </div>
@@ -217,27 +232,12 @@
                     <span class="pointer text-gray" onclick="closeModal('boss-modal')">✕</span>
                 </div>
                 <div class="divider"></div>
-                <input type="text" id="new-boss-name" placeholder="Boss Name" class="w-full mt-10">
+                <input type="text" id="new-boss-name" placeholder="Boss Name" class="w-full mt-10 epic-input">
                 <div class="input-row mt-10">
-                    <input type="number" id="new-boss-hp" placeholder="HP" value="1000" class="flex-grow">
-                    <input type="number" id="new-boss-gold" placeholder="Bounty" value="500" class="flex-grow">
+                    <input type="number" id="new-boss-hp" placeholder="HP" value="1000" class="flex-grow epic-input">
+                    <input type="number" id="new-boss-gold" placeholder="Bounty" value="500" class="flex-grow epic-input">
                 </div>
                 <button class="btn-primary w-full mt-15" onclick="summonBoss()">Summon!</button>
-            </div>
-        </div>
-
-        <div id="admin-modal" class="modal-overlay hidden">
-            <div class="modal-content panel">
-                <div class="flex-between">
-                    <h2 class="text-yellow">⚙️ Edit Item</h2>
-                    <span class="pointer text-gray" onclick="closeModal('admin-modal')">✕</span>
-                </div>
-                <div class="divider"></div>
-                <input type="hidden" id="admin-id">
-                <input type="text" id="admin-name" placeholder="name" class="w-full mt-10">
-                <input type="number" id="admin-cost" placeholder="cost" class="w-full mt-10">
-                <input type="text" id="admin-desc" placeholder="description" class="w-full mt-10">
-                <button class="btn-primary w-full mt-15" onclick="saveShopItem()">Save</button>
             </div>
         </div>
 

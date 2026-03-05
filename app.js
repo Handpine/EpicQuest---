@@ -9,7 +9,7 @@ let state = {
         stats: { questsToday: 0, questsWeek: 0, hpHealedToday: 0 }
     },
     quests: [], // type: 'active', 'tomorrow', 'prophecy', 'backlog'
-    bosses: [], // {id, name, currentHp, maxHp, subtasks: [{id, title, gold, dmg, date, active}]}
+    bosses: [], // {id, name, currentHp, maxHp, subtasks: [{id, title, gold, dmg, active}]}
     shop: [
         { id: 'item1', name: 'Bubble Tea', cost: 50, desc: 'Buy a cup of bubble tea' }
     ],
@@ -22,7 +22,7 @@ let state = {
     isAdminMode: false
 };
 
-const CACHE_KEY = 'epic-quest-v3';
+const CACHE_KEY = 'epic-quest-v4';
 
 function loadFromStorage() {
     const saved = localStorage.getItem(CACHE_KEY);
@@ -50,7 +50,7 @@ function gameTick() {
         state.hero.stats.hpHealedToday = 0;
         // Tomorrow 轉 Active
         state.quests.forEach(q => { if (q.type === 'tomorrow') q.type = 'active'; });
-        // 預言與 Boss 子任務轉移邏輯
+        // 預言與 Boss 任務日期檢查轉移
         checkDateTransfers();
         state.lastResetDate = today;
         showToast("A new day dawns...");
@@ -67,18 +67,12 @@ function gameTick() {
 
 function checkDateTransfers() {
     const todayMs = new Date().setHours(0,0,0,0);
-    // Prophecies
+    // 預言任務到期自動轉 Active
     state.quests.forEach(q => {
-        if (q.type === 'prophecy' && q.deadline !== 'eternal' && q.deadline !== 'custom') {
+        if (q.type === 'prophecy' && q.deadline !== 'eternal' && q.deadlineDate) {
             const dlMs = new Date(q.deadlineDate).getTime();
             if (todayMs >= dlMs) q.type = 'active';
         }
-    });
-    // Boss subtasks
-    state.bosses.forEach(b => {
-        b.subtasks.forEach(st => {
-            if (st.date && new Date(st.date).setHours(0,0,0,0) <= todayMs) st.active = true;
-        });
     });
 }
 
@@ -128,6 +122,13 @@ function checkCustomDate(val) {
     else dateInput.classList.add('hidden');
 }
 
+function toggleActiveQuestEdit() {
+    const list = document.getElementById('active-quest-list');
+    const btn = document.getElementById('toggle-edit-btn');
+    list.classList.toggle('edit-mode-on');
+    btn.classList.toggle('active');
+}
+
 function addQuest(type) {
     let titleInput, goldInput;
     let deadline = 'eternal', deadlineDate = null;
@@ -138,10 +139,12 @@ function addQuest(type) {
     else if(type === 'prophecy') { 
         titleInput = 'prophecy-title'; goldInput = 'prophecy-gold'; 
         deadline = document.getElementById('prophecy-deadline').value;
-        if (deadline !== 'eternal' && deadline !== 'custom') {
-            const d = new Date(); d.setDate(d.getDate() + parseInt(deadline));
-            deadlineDate = d.toISOString().split('T')[0];
-        } else if (deadline === 'custom') {
+        const d = new Date();
+        
+        if (deadline === '7') { d.setDate(d.getDate() + 7); deadlineDate = d.toISOString().split('T')[0]; }
+        else if (deadline === '14') { d.setDate(d.getDate() + 14); deadlineDate = d.toISOString().split('T')[0]; }
+        else if (deadline === '30') { d.setDate(d.getDate() + 30); deadlineDate = d.toISOString().split('T')[0]; }
+        else if (deadline === 'custom') {
             deadlineDate = document.getElementById('custom-date-input').value;
             if(!deadlineDate) { showToast("Please select a date!"); return; }
         }
@@ -184,10 +187,13 @@ function renderQuestList(type, containerId, emptyId) {
 
     itemsToRender.forEach(q => {
         const div = document.createElement('div');
-        div.className = 'quest-card'; div.id = q.isBoss ? `boss-st-${q.id}` : `quest-${q.id}`;
+        // 加入史詩樣式：如果是在 Active 列表裡的 Boss 任務，會套用通體血紅的 boss-quest
+        div.className = `quest-card ${q.isBoss ? 'boss-quest' : ''}`; 
+        div.id = q.isBoss ? `boss-st-${q.id}` : `quest-${q.id}`;
         
         let headerHtml = q.isBoss ? `<div class="boss-tag">🐉 ${q.bossName}</div><br>` : '';
         let extraInfo = '';
+        
         if(q.type === 'prophecy' && q.deadlineDate) {
             const daysLeft = Math.ceil((new Date(q.deadlineDate) - new Date()) / 8.64e7);
             if(daysLeft <= 3) div.classList.add('prophecy-danger');
@@ -195,16 +201,17 @@ function renderQuestList(type, containerId, emptyId) {
             extraInfo = `<br><span class="text-gray text-sm">⏳ ${daysLeft} days left</span>`;
         }
 
+        // 史詩圖標：📜 (Edit), 🪓 (Delete), 🔮 (Awaken/Transfer)
         div.innerHTML = `
             <div class="quest-content-row">
                 <div>${headerHtml}${q.title} ${extraInfo}</div>
                 ${q.type !== 'backlog' ? `<div>💰 ${q.gold}</div>` : ''}
             </div>
             <div class="quest-actions action-area">
-                ${!q.isBoss ? `<span class="action-icon" onclick="openEditModal(${q.id}, 'quest')">🖋️</span>` : ''}
-                ${!q.isBoss ? `<span class="action-icon" onclick="deleteQuest(${q.id})">❌</span>` : ''}
-                ${(type !== 'active' && !q.isBoss) ? `<span class="action-icon" onclick="transferToActive(${q.id}, 'quest')">⚡</span>` : ''}
-                ${q.isBoss && type !== 'active' ? `<span class="action-icon" onclick="transferToActive(${q.id}, 'boss-sub', ${q.bossId})">⚡</span>` : ''}
+                ${!q.isBoss ? `<span class="action-icon edit-action" onclick="openEditModal(${q.id}, 'quest')">📜</span>` : ''}
+                ${!q.isBoss ? `<span class="action-icon delete-action" onclick="deleteQuest(${q.id})">🪓</span>` : ''}
+                ${(type !== 'active' && !q.isBoss) ? `<span class="action-icon transfer-action" onclick="transferToActive(${q.id}, 'quest')">🔮</span>` : ''}
+                ${q.isBoss && type !== 'active' ? `<span class="action-icon transfer-action" onclick="transferToActive(${q.id}, 'boss-sub', ${q.bossId})">🔮</span>` : ''}
             </div>
         `;
         list.appendChild(div);
@@ -253,10 +260,17 @@ function executeSlash(cardEl, q) {
     // 2. 羊皮紙燃燒動畫
     cardEl.classList.add('burning');
 
-    // 3. 綠色浮動 EXP
+    // 3. 雙重噴發浮動文字 (EXP 往左，金幣往右)
     const expGain = 10;
+    const goldGain = q.gold || 0;
     const rect = cardEl.getBoundingClientRect();
-    showFloatingText(rect.left + rect.width/2, rect.top, `+${expGain} EXP`, '#4caf50');
+    
+    // EXP 噴發
+    showFloatingText(rect.left + rect.width/2, rect.top, `+${expGain} EXP`, '#4caf50', 'float-up-left');
+    // 金幣噴發 (如果有金幣)
+    if (goldGain > 0) {
+        showFloatingText(rect.left + rect.width/2, rect.top, `+${goldGain} G`, 'var(--gold)', 'float-up-right');
+    }
 
     // 4. 等待動畫完畢後清理與結算
     setTimeout(() => {
@@ -264,15 +278,24 @@ function executeSlash(cardEl, q) {
             const boss = state.bosses.find(b => b.id === q.bossId);
             boss.currentHp -= q.dmg;
             boss.subtasks = boss.subtasks.filter(st => st.id !== q.id);
-            if(boss.currentHp <= 0) { showToast(`Defeated ${boss.name}! +${boss.gold}G`); state.hero.gold += boss.gold; state.bosses = state.bosses.filter(b=>b.id!==boss.id); }
+            state.hero.gold += goldGain; // Boss 子任務獲得自訂金幣
+            if(boss.currentHp <= 0) { 
+                showToast(`Defeated ${boss.name}! +${boss.gold}G`); 
+                state.hero.gold += boss.gold; 
+                state.bosses = state.bosses.filter(b=>b.id!==boss.id); 
+            }
         } else {
             state.quests = state.quests.filter(item => item.id !== q.id);
-            state.hero.gold += q.gold || 0;
+            state.hero.gold += goldGain;
         }
 
         state.hero.exp += expGain;
         state.hero.stats.questsToday++; state.hero.stats.questsWeek++;
-        if(state.hero.exp >= state.hero.nextExp) { state.hero.exp -= state.hero.nextExp; state.hero.level++; state.hero.nextExp = Math.floor(state.hero.nextExp * 1.5); showToast("Level Up!"); }
+        if(state.hero.exp >= state.hero.nextExp) { 
+            state.hero.exp -= state.hero.nextExp; state.hero.level++; 
+            state.hero.nextExp = Math.floor(state.hero.nextExp * 1.5); 
+            showToast("Level Up!"); 
+        }
         
         saveToStorage(); renderAllQuests(); renderBosses(); updateHUD();
     }, 800);
@@ -328,9 +351,9 @@ function renderBosses() {
         let subtasksHtml = b.subtasks.filter(st => !st.active).map(st => `
             <div class="quest-card mt-5">
                 <div class="quest-content-row">
-                    <div>${st.title} <span class="text-gray text-sm">[DMG: ${st.dmg}]</span></div>
+                    <div>${st.title} <span class="text-gray text-sm">[DMG: ${st.dmg}] [💰: ${st.gold}]</span></div>
                     <div class="action-area">
-                        <span class="action-icon" onclick="transferToActive(${st.id}, 'boss-sub', ${b.id})">⚡</span>
+                        <span class="action-icon transfer-action" onclick="transferToActive(${st.id}, 'boss-sub', ${b.id})">🔮</span>
                     </div>
                 </div>
             </div>
@@ -344,8 +367,9 @@ function renderBosses() {
             <div class="mt-15">${subtasksHtml}</div>
             
             <div class="input-row mt-10">
-                <input type="text" id="bst-title-${b.id}" placeholder="Attack Task" class="flex-grow">
-                <input type="number" id="bst-dmg-${b.id}" placeholder="DMG" value="50" class="w-20">
+                <input type="text" id="bst-title-${b.id}" placeholder="Attack Task" class="flex-grow epic-input">
+                <input type="number" id="bst-dmg-${b.id}" placeholder="DMG" value="50" class="w-20 epic-input">
+                <input type="number" id="bst-gold-${b.id}" placeholder="Gold" value="10" class="w-20 epic-input">
                 <button class="btn-icon" onclick="addBossSubtask(${b.id})">+</button>
             </div>
         `;
@@ -356,9 +380,10 @@ function renderBosses() {
 function addBossSubtask(bossId) {
     const title = document.getElementById(`bst-title-${bossId}`).value;
     const dmg = parseInt(document.getElementById(`bst-dmg-${bossId}`).value) || 50;
+    const gold = parseInt(document.getElementById(`bst-gold-${bossId}`).value) || 10;
     if(!title) return;
     const boss = state.bosses.find(b => b.id === bossId);
-    boss.subtasks.push({ id: Date.now(), title, dmg, active: false, gold: 0 }); // 戰鬥任務不給碎金幣，打死才給
+    boss.subtasks.push({ id: Date.now(), title, dmg, gold, active: false }); 
     saveToStorage(); renderBosses();
 }
 
@@ -388,7 +413,34 @@ function consumePotion(amount) {
     saveToStorage(); updateHUD();
 }
 
-function toggleAdminMode() { state.isAdminMode = !state.isAdminMode; renderShop(); }
+function toggleAdminMode() { 
+    state.isAdminMode = !state.isAdminMode; 
+    const form = document.getElementById('shop-admin-top-form');
+    const btn = document.getElementById('shop-admin-btn');
+    if(state.isAdminMode) {
+        form.classList.remove('hidden');
+        btn.classList.add('text-yellow');
+    } else {
+        form.classList.add('hidden');
+        btn.classList.remove('text-yellow');
+    }
+    renderShop(); 
+}
+
+function addNewShopItem() {
+    const name = document.getElementById('add-item-name').value;
+    const cost = parseInt(document.getElementById('add-item-cost').value);
+    const desc = document.getElementById('add-item-desc').value;
+    if(!name || isNaN(cost)) { showToast("Name and Gold are required!"); return; }
+    
+    state.shop.push({ id: `item${Date.now()}`, name, cost, desc });
+    
+    document.getElementById('add-item-name').value = '';
+    document.getElementById('add-item-cost').value = '';
+    document.getElementById('add-item-desc').value = '';
+    
+    saveToStorage(); renderShop(); showToast("New item forged!");
+}
 
 function renderShop() {
     const grid = document.getElementById('shop-grid');
@@ -399,28 +451,23 @@ function renderShop() {
             <div class="text-yellow mb-5">💰 ${i.cost}</div>
             ${state.isAdminMode ? `
                 <div class="flex-row">
-                    <button class="btn-primary flex-grow" onclick="openShopEdit('${i.id}')">Edit</button>
-                    <button class="btn-dashed flex-grow" onclick="deleteShopItem('${i.id}')">Del</button>
+                    <button class="btn-primary flex-grow" onclick="openShopEdit('${i.id}')">📜</button>
+                    <button class="btn-dashed flex-grow" onclick="deleteShopItem('${i.id}')">🪓</button>
                 </div>
             ` : `<button class="btn-primary" onclick="buyItem(${i.cost})">Purchase</button>`}
         </div>
     `).join('');
-    
-    if(state.isAdminMode) {
-        grid.innerHTML += `<div class="shop-card pointer flex-center" style="justify-content:center; align-items:center;" onclick="openShopEdit('')"><h1 class="text-yellow">+</h1></div>`;
-    }
 }
 
 function openShopEdit(id) {
-    if(id) {
-        const item = state.shop.find(i => i.id === id);
-        document.getElementById('admin-id').value = item.id;
-        document.getElementById('admin-name').value = item.name;
-        document.getElementById('admin-cost').value = item.cost;
-        document.getElementById('admin-desc').value = item.desc;
-    } else { document.querySelectorAll('#admin-modal input').forEach(i=>i.value=''); document.getElementById('admin-id').value = `item${Date.now()}`; }
+    const item = state.shop.find(i => i.id === id);
+    document.getElementById('admin-id').value = item.id;
+    document.getElementById('admin-name').value = item.name;
+    document.getElementById('admin-cost').value = item.cost;
+    document.getElementById('admin-desc').value = item.desc;
     openModal('admin-modal');
 }
+
 function saveShopItem() {
     const id = document.getElementById('admin-id').value;
     const name = document.getElementById('admin-name').value;
@@ -428,14 +475,15 @@ function saveShopItem() {
     const desc = document.getElementById('admin-desc').value;
     if(!id || !name) return;
     const existingIdx = state.shop.findIndex(i => i.id === id);
-    if(existingIdx >= 0) state.shop[existingIdx] = {id, name, cost, desc}; else state.shop.push({id, name, cost, desc});
+    if(existingIdx >= 0) state.shop[existingIdx] = {id, name, cost, desc}; 
     closeModal('admin-modal'); saveToStorage(); renderShop();
 }
+
 function deleteShopItem(id) { state.shop = state.shop.filter(i => i.id !== id); saveToStorage(); renderShop(); }
 function buyItem(cost) { if (state.hero.gold >= cost) { state.hero.gold -= cost; showToast(`Item Purchased!`); saveToStorage(); updateHUD(); } else { showToast("Not enough gold."); } }
 
 // ==========================================
-// 6. UI Helpers
+// 6. UI Helpers & Animators
 // ==========================================
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -445,10 +493,12 @@ function toggleAccordion(id) {
     else { content.classList.add('hidden'); icon.innerText = '▶'; }
 }
 function showToast(msg) { const toast = document.getElementById('epic-toast'); toast.innerText = msg; toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 3000); }
-function showFloatingText(x, y, text, color) {
-    const el = document.createElement('div'); el.className = 'floating-text';
+
+// 支援傳入自訂動畫 class (如浮動左右)
+function showFloatingText(x, y, text, color, animClass = 'floatUp') {
+    const el = document.createElement('div'); el.className = `floating-text ${animClass}`;
     el.style.left = `${x}px`; el.style.top = `${y}px`; el.style.color = color; el.innerText = text;
-    document.body.appendChild(el); setTimeout(() => el.remove(), 1000);
+    document.body.appendChild(el); setTimeout(() => el.remove(), 1200);
 }
 
 document.querySelectorAll('.nav-item').forEach(btn => {
