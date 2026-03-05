@@ -1,90 +1,237 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>EpicQuest</title>
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="debuff-overlay" class="debuff-warning hidden"></div>
     
     <div id="app-container">
-        <header class="hero-hud">
-            <div class="hud-row top-row">
-                <div class="avatar-info">
+        <div id="global-gold-container">
+            💰 <span id="hero-gold">0</span>
+        </div>
+
+        <header class="hud-panel panel">
+            <div class="hud-content">
+                <div class="hud-avatar-glow">
                     <span id="hero-avatar" class="avatar">🧙‍♂️</span>
-                    <span id="hero-name" class="nickname">Hero</span>
-                    <span class="level">Lv. <span id="hero-level">1</span></span>
                 </div>
-                <div id="countdown-timer" class="timer">00:00:00</div>
-            </div>
-            <div class="hud-row bars-row">
-                <div class="bar-container hp-container">
-                    <div id="hp-bar" class="bar-fill hp-fill"></div>
-                    <span class="bar-text">HP: <span id="hp-text">100/100</span></span>
+                <div class="hud-stats">
+                    <h2 class="hero-name-title text-yellow">Hero (Lv<span id="hero-level">1</span>)</h2>
+                    <div class="bar-container hp-container">
+                        <div id="hp-bar" class="bar-fill hp-fill"></div>
+                        <span class="bar-text">HP <span id="hp-text">100/100</span></span>
+                    </div>
+                    <div class="bar-container exp-container">
+                        <div id="exp-bar" class="bar-fill exp-fill"></div>
+                        <span class="bar-text">EXP <span id="exp-text">0/100</span></span>
+                    </div>
                 </div>
-                <div class="bar-container exp-container">
-                    <div id="exp-bar" class="bar-fill exp-fill"></div>
-                    <span class="bar-text">EXP: <span id="exp-text">0/100</span></span>
-                </div>
-            </div>
-            <div class="hud-row gold-row">
-                <span class="gold-display">💰 <span id="hero-gold">0</span></span>
             </div>
         </header>
 
         <main id="main-content">
+            
             <div id="page-quests" class="page-content active">
-                <div class="input-section">
-                    <input type="text" id="new-quest-title" placeholder="What is your quest?">
-                    <input type="number" id="new-quest-gold" placeholder="G" value="10">
-                    <button id="add-quest-btn" class="btn">Add Quest</button>
+                <h1 class="page-title text-yellow">📜 Tavern Bounty Board</h1>
+                <div class="divider"></div>
+                <div class="input-row">
+                    <input type="text" id="quest-title" placeholder="Task Name" class="flex-grow">
+                    <input type="number" id="quest-gold" placeholder="Gold" class="w-20">
+                    <button class="btn-primary" onclick="addQuest('active')">Post</button>
                 </div>
                 
-                <h2 class="section-title">Active Quests</h2>
-                <div id="quest-list" class="list-container"></div>
-                
-                <h2 class="section-title">Tomorrow's Plan</h2>
-                <div id="tomorrow-list" class="list-container"></div>
+                <h2 class="section-title text-yellow mt-15">⚔️ Active Quests</h2>
+                <div class="divider"></div>
+                <div id="active-quest-list" class="list-container"></div>
+                <div id="empty-active" class="empty-state">No active quests yet...</div>
+
+                <h2 class="section-title text-yellow mt-15">⏳ Daily Reset & Potions</h2>
+                <div class="divider"></div>
+                <div class="text-center text-gray mt-10">Time until reset: <span id="countdown-timer">00:00:00</span></div>
+                <div class="potion-container mt-15" onclick="usePotion()">🧪</div>
             </div>
 
-            <div id="page-shop" class="page-content">
-                <h2 class="section-title">Merchant's Wares</h2>
-                <div id="shop-list" class="grid-container"></div>
-            </div>
+            <div id="page-future" class="page-content">
+                <h1 class="page-title text-yellow">🔮 Prophecies & Future</h1>
+                <div class="divider"></div>
 
-            <div id="page-profile" class="page-content">
-                <h2 class="section-title">Hero's Profile</h2>
-                <div class="profile-stats">
-                    <p>Total EXP: <span id="stat-total-exp">0</span></p>
-                    <p>Quests Completed: <span id="stat-quests">0</span></p>
-                    <div class="survival-settings">
-                        <label for="difficulty-slider">Vitality Decay (HP/day): <span id="difficulty-val">24</span></label>
-                        <input type="range" id="difficulty-slider" min="0" max="100" value="24">
+                <h2 class="section-title text-yellow">🌅 Tomorrow's Fate</h2>
+                <div class="input-row mt-10">
+                    <input type="text" id="tomorrow-title" placeholder="Task Name" class="flex-grow">
+                    <input type="number" id="tomorrow-gold" placeholder="Gold" class="w-20">
+                    <button class="btn-icon" onclick="addQuest('tomorrow')">+</button>
+                </div>
+                <div id="tomorrow-list" class="list-container mt-10"></div>
+                <div id="empty-tomorrow" class="empty-state">No fate sealed for tomorrow...</div>
+
+                <h2 class="section-title text-yellow mt-15">📜 Prophecies</h2>
+                <div class="divider"></div>
+                <div class="input-row mt-10">
+                    <input type="text" id="prophecy-title" placeholder="Task Name" class="flex-grow">
+                    <input type="number" id="prophecy-gold" placeholder="Gold" class="w-20">
+                    <select id="prophecy-deadline" class="w-30">
+                        <option value="eternal">∞ Eternal</option>
+                        <option value="3">3 Days</option>
+                        <option value="7">7 Days</option>
+                    </select>
+                    <button class="btn-icon" onclick="addQuest('prophecy')">+</button>
+                </div>
+                <div id="prophecy-list" class="list-container mt-10"></div>
+                <div id="empty-prophecy" class="empty-state">The future is clouded...</div>
+
+                <div class="accordion panel mt-15">
+                    <h2 class="section-title text-yellow pointer" onclick="toggleAccordion('backlog')">
+                        <span id="backlog-icon">▼</span> 📦 The Archives (Backlog)
+                    </h2>
+                    <div id="backlog-content" class="accordion-content">
+                        <div class="divider"></div>
+                        <div class="input-row mt-10">
+                            <input type="text" id="backlog-title" placeholder="Task Name" class="flex-grow">
+                            <button class="btn-icon" onclick="addQuest('backlog')">+</button>
+                        </div>
+                        <div id="backlog-list" class="list-container mt-10"></div>
+                        <div id="empty-backlog" class="empty-state">No backlog quests yet...</div>
                     </div>
                 </div>
             </div>
+
+            <div id="page-bosses" class="page-content">
+                <h1 class="page-title text-yellow">🐉 Epic Boss Battles</h1>
+                <div class="divider"></div>
+                
+                <button class="btn-dashed w-full mt-10" onclick="openModal('boss-modal')">☠️ Summon New Boss</button>
+                
+                <div id="boss-list" class="list-container mt-15"></div>
+                <div id="empty-boss" class="empty-state mt-15">No active boss battles...</div>
+            </div>
+
+            <div id="page-shop" class="page-content">
+                <div class="flex-between">
+                    <h1 class="page-title text-yellow">🛒 Item Shop</h1>
+                    <span class="admin-icon pointer text-gray" onclick="openModal('admin-modal')">⚙️</span>
+                </div>
+                <div class="divider"></div>
+                
+                <div id="shop-grid" class="shop-grid mt-10"></div>
+            </div>
+
+            <div id="page-profile" class="page-content">
+                <h1 class="page-title text-yellow">⚔️ Hero Profile</h1>
+                <div class="divider"></div>
+
+                <div class="panel profile-stats-panel flex-row mt-10">
+                    <div class="profile-avatar-wrapper">
+                        <div class="hud-avatar-glow large-avatar">🧙‍♂️</div>
+                        <h2 class="text-yellow text-center mt-5">Hero</h2>
+                    </div>
+                    <div class="profile-details flex-grow">
+                        <div class="stat-row"><span>Level:</span> <span class="text-yellow" id="stat-level">1</span></div>
+                        <div class="divider-thin"></div>
+                        <div class="stat-row"><span>Total EXP:</span> <span class="text-yellow" id="stat-exp">0</span></div>
+                        <div class="divider-thin"></div>
+                        <div class="stat-row"><span>HP:</span> <span class="text-yellow" id="stat-hp">100/100</span></div>
+                        <div class="divider-thin"></div>
+                        <div class="stat-row"><span>Quests Completed:</span> <span class="text-yellow" id="stat-quests">0</span></div>
+                        <div class="divider-thin"></div>
+                        <div class="stat-row"><span>Gold:</span> <span class="text-yellow" id="stat-gold">0</span></div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-15">
+                    <h2 class="text-yellow">❤️ Survival Status</h2>
+                    <p class="text-gray mt-5">Stress Level: <span id="stress-level-text">-24</span> HP / day</p>
+                    <button class="btn-primary mt-10" onclick="openModal('difficulty-modal')">Adjust Difficulty</button>
+                </div>
+
+                <div class="divider mt-15"></div>
+                <h2 class="text-center text-yellow mt-10">📊 Statistics</h2>
+                <div class="stats-grid mt-10">
+                    <div class="stat-card panel text-center">
+                        <p class="text-gray text-sm">Total Battles Won</p>
+                        <h2 class="text-yellow huge-number" id="stat-battles">0</h2>
+                    </div>
+                    <div class="stat-card panel text-center">
+                        <p class="text-gray text-sm">Longest Streak</p>
+                        <h2 class="text-yellow huge-number" id="stat-streak">0</h2>
+                    </div>
+                    <div class="stat-card panel text-center">
+                        <p class="text-gray text-sm">HP Healed</p>
+                        <h2 class="text-yellow huge-number" id="stat-healed">0</h2>
+                    </div>
+                </div>
+
+                <div class="footer text-center mt-20">
+                    <p class="text-gray text-sm">Version: v2.0</p>
+                    <button class="btn-primary mt-5" onclick="location.reload()">🔄 Force Update / Reload</button>
+                </div>
+            </div>
+
         </main>
 
         <nav class="bottom-nav">
-            <button class="nav-btn active" data-target="page-quests">⚔️ Quests</button>
-            <button class="nav-btn" data-target="page-shop">💰 Shop</button>
-            <button class="nav-btn" data-target="page-profile">👤 Profile</button>
+            <div class="nav-item active" data-target="page-quests">📜<br>Quests</div>
+            <div class="nav-item" data-target="page-future">🔮<br>Future</div>
+            <div class="nav-item" data-target="page-bosses">🐉<br>Bosses</div>
+            <div class="nav-item" data-target="page-shop">🛒<br>Shop</div>
+            <div class="nav-item" data-target="page-profile">👤<br>Profile</div>
         </nav>
+
+        <div id="boss-modal" class="modal-overlay hidden">
+            <div class="modal-content panel">
+                <div class="flex-between">
+                    <h2 class="text-yellow">☠️ Summon New Boss</h2>
+                    <span class="pointer text-gray" onclick="closeModal('boss-modal')">✕</span>
+                </div>
+                <div class="divider"></div>
+                <input type="text" id="new-boss-name" placeholder="Boss Name" class="w-full mt-10">
+                <div class="input-row mt-10">
+                    <input type="number" id="new-boss-hp" placeholder="HP" value="1000" class="flex-grow">
+                    <input type="number" id="new-boss-gold" placeholder="Bounty" value="500" class="flex-grow">
+                </div>
+                <button class="btn-primary w-full mt-15" onclick="summonBoss()">Summon!</button>
+            </div>
+        </div>
+
+        <div id="admin-modal" class="modal-overlay hidden">
+            <div class="modal-content panel">
+                <div class="flex-between">
+                    <h2 class="text-yellow">⚙️ Shop Admin</h2>
+                    <span class="pointer text-gray" onclick="closeModal('admin-modal')">✕</span>
+                </div>
+                <div class="divider"></div>
+                <input type="text" id="admin-id" placeholder="id (unique)" class="w-full mt-10">
+                <input type="text" id="admin-name" placeholder="name" class="w-full mt-10">
+                <input type="number" id="admin-cost" placeholder="cost" class="w-full mt-10">
+                <input type="text" id="admin-desc" placeholder="description" class="w-full mt-10">
+                <div class="input-row mt-15">
+                    <button class="btn-primary flex-grow" onclick="saveShopItem()">Save</button>
+                    <button class="btn-primary flex-grow" onclick="document.querySelectorAll('#admin-modal input').forEach(i=>i.value='')">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="difficulty-modal" class="modal-overlay hidden">
+            <div class="modal-content panel">
+                <div class="flex-between">
+                    <h2 class="text-yellow">❤️ Stress Level</h2>
+                    <span class="pointer text-gray" onclick="closeModal('difficulty-modal')">✕</span>
+                </div>
+                <div class="divider"></div>
+                <p class="text-center text-gray mt-10">HP Drain per Day: <span id="diff-value" class="text-yellow">24</span></p>
+                <input type="range" id="diff-slider" min="0" max="100" value="24" class="w-full mt-15">
+                <button class="btn-primary w-full mt-15" onclick="closeModal('difficulty-modal')">Confirm</button>
+            </div>
+        </div>
 
         <div id="epic-toast" class="toast hidden"></div>
     </div>
 
     <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js');
-            });
-        }
-    </script>
 </body>
 </html>
