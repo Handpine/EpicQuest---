@@ -3,6 +3,7 @@
 // ==========================================
 let state = {
     hero: {
+        name: 'Hero', // ✨ 新增：英雄名稱
         level: 1, exp: 0, nextExp: 100, gold: 0,
         hp: 100, maxHp: 100,
         vitalityDifficulty: 24,
@@ -22,8 +23,8 @@ let state = {
     isAdminMode: false
 };
 
-// 升級 Cache 版本，強制更新
-const CACHE_KEY = 'epic-quest-v13';
+// 升級 Cache 版本，確保結構與修正更新
+const CACHE_KEY = 'epic-quest-v14';
 
 // 月曆專用全域變數
 let currentCalDate = new Date();
@@ -31,7 +32,11 @@ let pendingCustomDateStr = null;
 
 function loadFromStorage() {
     const saved = localStorage.getItem(CACHE_KEY);
-    if (saved) state = JSON.parse(saved);
+    if (saved) {
+        state = JSON.parse(saved);
+        // 防呆：確保舊玩家的存檔也有名字屬性
+        if (!state.hero.name) state.hero.name = 'Hero';
+    }
 }
 
 function getWeekIdentifier() {
@@ -57,10 +62,10 @@ async function appendToLifeProgressPlan(itemName) {
     console.log(`🔮 嘗試將 [${itemName}] 寫入 Life Progress (${todayKey})...`);
 
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        // 若 Life Progress 需要驗證，這裡會確認是否已登入
+        // ✨ 修復點：全面改用 supabaseClient
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
-        const { data: entry, error: fetchError } = await supabase
+        const { data: entry, error: fetchError } = await supabaseClient
             .from('entries')
             .select('id, plan')
             .eq('date_key', todayKey)
@@ -74,12 +79,12 @@ async function appendToLifeProgressPlan(itemName) {
             const currentPlan = entry.plan || "";
             newPlan = currentPlan.trim() ? `${currentPlan}\n- ${itemName}` : `- ${itemName}`;
             
-            await supabase
+            await supabaseClient
                 .from('entries')
                 .update({ plan: newPlan, updated_at: Date.now() })
                 .eq('id', entry.id);
         } else {
-            await supabase
+            await supabaseClient
                 .from('entries')
                 .insert([{
                     date_key: todayKey,
@@ -96,10 +101,10 @@ async function appendToLifeProgressPlan(itemName) {
 
 async function saveToCloud() {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return; // 沒登入則跳過，僅依靠本地 LocalStorage
 
-        await supabase
+        await supabaseClient
             .from('epic_quest_save')
             .upsert({ 
                 user_id: session.user.id, 
@@ -113,10 +118,10 @@ async function saveToCloud() {
 
 async function loadFromCloud() {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return false;
 
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('epic_quest_save')
             .select('state_data')
             .eq('user_id', session.user.id)
@@ -124,6 +129,7 @@ async function loadFromCloud() {
 
         if (data && data.state_data) {
             state = data.state_data;
+            if (!state.hero.name) state.hero.name = 'Hero'; // 讀取防呆
             return true; // 成功從雲端載入
         }
     } catch (err) {
@@ -147,7 +153,8 @@ async function handleSignUp() {
     if (!email || !password) { showToast("⚠️ Email and Password required!"); return; }
 
     showToast("⏳ Sealing your fate...");
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // ✨ 修復點：全面改用 supabaseClient
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
     
     if (error) {
         showToast(`❌ Error: ${error.message}`);
@@ -162,17 +169,16 @@ async function handleLogin() {
     if (!email || !password) { showToast("⚠️ Email and Password required!"); return; }
 
     showToast("⏳ Channeling magic...");
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     
     if (error) {
         showToast(`❌ Error: ${error.message}`);
     } else {
         closeModal('auth-modal');
         showToast("🔮 Welcome back, Hero!");
-        document.getElementById('auth-password').value = ''; // 安全清空密碼
-        checkAuthAndUpdateUI(); // 更新介面狀態
+        document.getElementById('auth-password').value = ''; 
+        checkAuthAndUpdateUI(); 
         
-        // 登入後自動從雲端拉取最新進度覆蓋本機
         const loaded = await loadFromCloud();
         if (loaded) {
             renderAllQuests(); renderBosses(); renderShop(); renderPotions(); updateHUD();
@@ -182,13 +188,13 @@ async function handleLogin() {
 }
 
 async function handleLogout() {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     showToast("💨 You have left the guild.");
     checkAuthAndUpdateUI();
 }
 
 async function checkAuthAndUpdateUI() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     const statusText = document.getElementById('auth-status-text');
     const btnLogin = document.getElementById('btn-show-login');
     const btnLogout = document.getElementById('btn-logout');
@@ -208,8 +214,23 @@ async function checkAuthAndUpdateUI() {
 
 
 // ==========================================
-// 2. 核心迴圈 & HUD
+// 2. 核心迴圈 & HUD & 英雄名稱管理
 // ==========================================
+
+// ✨ 新增：儲存新暱稱
+function saveHeroName() {
+    const input = document.getElementById('new-hero-name-input').value.trim();
+    if (input) {
+        state.hero.name = input;
+        saveToStorage();
+        updateHUD();
+        closeModal('name-modal');
+        showToast("Hero renamed!");
+    } else {
+        showToast("⚠️ Name cannot be empty!");
+    }
+}
+
 function gameTick() {
     const now = Date.now();
     const hpDecay = (state.hero.vitalityDifficulty / (24 * 60 * 60 * 1000)) * (now - state.lastTick);
@@ -246,6 +267,11 @@ function checkDateTransfers() {
 }
 
 function updateHUD() {
+    // ✨ 新增：同步顯示英雄名稱
+    const heroNameDisplay = state.hero.name || 'Hero';
+    document.getElementById('hud-hero-name').innerText = heroNameDisplay;
+    document.getElementById('profile-hero-name').innerText = heroNameDisplay;
+
     document.getElementById('hero-gold').innerText = Math.floor(state.hero.gold);
     document.getElementById('hero-level').innerText = state.hero.level;
     
