@@ -3,7 +3,7 @@
 // ==========================================
 let state = {
     hero: {
-        name: 'Hero', // ✨ 新增：英雄名稱
+        name: 'Hero', // ✨ 英雄名稱
         level: 1, exp: 0, nextExp: 100, gold: 0,
         hp: 100, maxHp: 100,
         vitalityDifficulty: 24,
@@ -23,8 +23,8 @@ let state = {
     isAdminMode: false
 };
 
-// 升級 Cache 版本，確保結構與修正更新
-const CACHE_KEY = 'epic-quest-v14';
+// ✨ 升級 Cache 版本，確保黑圓點格式更新生效
+const CACHE_KEY = 'epic-quest-v15';
 
 // 月曆專用全域變數
 let currentCalDate = new Date();
@@ -62,7 +62,6 @@ async function appendToLifeProgressPlan(itemName) {
     console.log(`🔮 嘗試將 [${itemName}] 寫入 Life Progress (${todayKey})...`);
 
     try {
-        // ✨ 修復點：全面改用 supabaseClient
         const { data: { session } } = await supabaseClient.auth.getSession();
 
         const { data: entry, error: fetchError } = await supabaseClient
@@ -73,17 +72,20 @@ async function appendToLifeProgressPlan(itemName) {
 
         if (fetchError) throw fetchError;
 
-        let newPlan = `- ${itemName}`;
+        // ✨ 格式修復點：將 '-' 改為全形黑圓點 '•' 對齊 Life Progress 原生格式
+        let newPlan = `• ${itemName}`;
         
         if (entry) {
             const currentPlan = entry.plan || "";
-            newPlan = currentPlan.trim() ? `${currentPlan}\n- ${itemName}` : `- ${itemName}`;
+            // 如果原本已有內容，換行並補上黑圓點
+            newPlan = currentPlan.trim() ? `${currentPlan}\n• ${itemName}` : `• ${itemName}`;
             
             await supabaseClient
                 .from('entries')
                 .update({ plan: newPlan, updated_at: Date.now() })
                 .eq('id', entry.id);
         } else {
+            // 今天完全沒日記的話，建立新檔並用黑圓點開頭
             await supabaseClient
                 .from('entries')
                 .insert([{
@@ -153,7 +155,6 @@ async function handleSignUp() {
     if (!email || !password) { showToast("⚠️ Email and Password required!"); return; }
 
     showToast("⏳ Sealing your fate...");
-    // ✨ 修復點：全面改用 supabaseClient
     const { data, error } = await supabaseClient.auth.signUp({ email, password });
     
     if (error) {
@@ -217,7 +218,6 @@ async function checkAuthAndUpdateUI() {
 // 2. 核心迴圈 & HUD & 英雄名稱管理
 // ==========================================
 
-// ✨ 新增：儲存新暱稱
 function saveHeroName() {
     const input = document.getElementById('new-hero-name-input').value.trim();
     if (input) {
@@ -267,7 +267,6 @@ function checkDateTransfers() {
 }
 
 function updateHUD() {
-    // ✨ 新增：同步顯示英雄名稱
     const heroNameDisplay = state.hero.name || 'Hero';
     document.getElementById('hud-hero-name').innerText = heroNameDisplay;
     document.getElementById('profile-hero-name').innerText = heroNameDisplay;
