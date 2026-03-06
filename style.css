@@ -24,13 +24,16 @@ body {
     
     /* 引入行書中文字體，充滿手寫卷宗的神祕感 */
     font-family: 'MedievalSharp', 'Zhi Mang Xing', cursive; 
-    background-image: url('background.png'); /* 黑森林背景 */
+    background-image: url('background.jpg'); /* 黑森林背景 */
     background-size: cover; background-attachment: fixed; background-position: center;
     color: var(--text-primary); overflow-x: hidden;
 }
 
 /* 開放輸入框可以輸入與選取 */
 input, select { user-select: auto; -webkit-user-select: auto; }
+
+/* 針對 iOS 原生日曆選擇器，強制轉為暗黑模式 */
+input[type="date"] { color-scheme: dark; }
 
 /* 標題使用毛筆楷書 (Ma Shan Zheng)，更具史詩張力 */
 h1, h2, h3, .text-yellow {
@@ -96,12 +99,16 @@ h1, h2, h3, .text-yellow {
 .nav-item { text-align: center; color: var(--text-gray); font-size: 0.8rem; cursor: pointer; transition: 0.2s; padding-bottom: 5px; font-family: 'Cinzel', 'Ma Shan Zheng'; }
 .nav-item.active { color: var(--gold); text-shadow: 0 0 5px var(--gold); border-bottom: 3px solid var(--gold); }
 
-/* 輸入框史詩化 */
+/* ================= 史詩化與防跑版輸入框 ================= */
 .input-row { display: flex; gap: 8px; align-items: center; }
+/* 防跑版重點： flex-wrap 允許元素在狹窄螢幕換行 */
+.flex-wrap { flex-wrap: wrap; } 
 .epic-input {
     background: rgba(0, 0, 0, 0.4); border: 1px solid var(--gold-dark); border-bottom: 2px solid var(--gold);
     color: var(--gold); border-radius: 4px; padding: 10px; font-family: 'MedievalSharp', 'Zhi Mang Xing', cursive; 
     font-size: 1.1rem; outline: none; transition: 0.3s;
+    /* 防跑版重點：允許 Input 縮小低於瀏覽器預設寬度 */
+    min-width: 0; 
 }
 .epic-input:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--gold); box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
 .epic-input::placeholder { color: rgba(255, 215, 0, 0.3); }
@@ -110,14 +117,14 @@ h1, h2, h3, .text-yellow {
     background: linear-gradient(to bottom, #5d4037, #3e2723); color: var(--gold); border: 1px solid var(--gold);
     border-radius: 4px; padding: 10px 15px; font-family: 'Cinzel', 'Ma Shan Zheng', serif; cursor: pointer; text-shadow: 1px 1px 2px #000;
 }
-.btn-icon { background: linear-gradient(to bottom, #5d4037, #3e2723); color: var(--gold); border: 1px solid var(--gold); border-radius: 4px; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; }
+.btn-icon { background: linear-gradient(to bottom, #5d4037, #3e2723); color: var(--gold); border: 1px solid var(--gold); border-radius: 4px; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
 .btn-dashed { background: rgba(255,0,0,0.1); color: #ff5252; border: 1px dashed #ff5252; border-radius: 4px; padding: 15px; font-size: 1.2rem; cursor: pointer; font-family: 'Cinzel', 'Ma Shan Zheng'; }
 
 
 /* ================= 史詩真實羊皮紙卡片設計 ================= */
 .quest-card {
     /* 套用真實羊皮紙材質 */
-    background-image: url('parchment.png');
+    background-image: url('parchment.jpg');
     background-size: cover;
     background-position: center;
     border: 1px solid #3e2723;
@@ -141,7 +148,7 @@ h1, h2, h3, .text-yellow {
     background: rgba(138, 3, 3, 0.15); pointer-events: none; mix-blend-mode: multiply;
 }
 
-.quest-content-row { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+.quest-content-row { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; gap: 10px; }
 .quest-actions { display: flex; gap: 12px; margin-top: 10px; justify-content: flex-end; position: relative; z-index: 2; }
 .action-icon { font-size: 1.3rem; cursor: pointer; opacity: 0.85; transition: 0.2s; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5)); }
 .action-icon:hover { opacity: 1; transform: scale(1.2); }
@@ -152,14 +159,9 @@ h1, h2, h3, .text-yellow {
 
 /* 隱藏 Active Quest 的編輯/刪除按鈕，直到進入 Edit Mode */
 #active-quest-list .quest-card .edit-action,
-#active-quest-list .quest-card .delete-action {
-    display: none;
-}
+#active-quest-list .quest-card .delete-action { display: none; }
 #active-quest-list.edit-mode-on .quest-card .edit-action,
-#active-quest-list.edit-mode-on .quest-card .delete-action {
-    display: inline-block;
-    animation: fadeIn 0.3s forwards;
-}
+#active-quest-list.edit-mode-on .quest-card .delete-action { display: inline-block; animation: fadeIn 0.3s forwards; }
 
 /* Boss 戰任務 Tag */
 .boss-tag { background: #5c3a21; color: var(--gold); font-size: 0.8rem; padding: 2px 8px; border-radius: 2px; margin-bottom: 5px; display: inline-block; box-shadow: 0 0 8px rgba(255,0,0,0.6); border: 1px solid #8a0303; font-family: 'Cinzel', serif; }
@@ -169,11 +171,29 @@ h1, h2, h3, .text-yellow {
 .prophecy-danger { box-shadow: 0 0 20px var(--hp-low), inset 0 0 25px rgba(244,67,54,0.5); border: 1px solid var(--hp-low); animation: urgentShake 2s infinite; color: #5a0505; }
 
 
-/* 藥水區 */
+/* ================= 藥水區 (優化點擊體驗) ================= */
 .potions-area { text-align: center; }
-.potion-icon { font-size: 2.5rem; display: inline-block; animation: float 3s infinite ease-in-out; filter: drop-shadow(0 0 10px #4caf50); }
-.potion-list { justify-content: center; flex-wrap: wrap; margin-top: 10px; gap: 10px; }
-.potion-item { background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50; padding: 5px 12px; border-radius: 20px; color: #4caf50; font-size: 0.9rem; cursor: pointer; box-shadow: 0 0 8px rgba(76, 175, 80, 0.5); font-family: 'MedievalSharp', 'Zhi Mang Xing'; }
+.potion-list { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+
+/* 主畫面已建立的藥水（顯著放大） */
+.potion-item { 
+    background: rgba(76, 175, 80, 0.2); border: 1px solid #4caf50; 
+    padding: 10px 18px; /* 加大點擊區塊 */
+    border-radius: 25px; color: #4caf50; font-size: 1.15rem; /* 加大字體 */
+    cursor: pointer; box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); 
+    font-family: 'MedievalSharp', 'Zhi Mang Xing'; transition: 0.2s;
+}
+.potion-item:active { transform: scale(0.9); }
+
+/* 管理視窗內的刪除模式藥水（紅色警告樣式） */
+.delete-potion-item {
+    background: rgba(244, 67, 54, 0.15); border: 1px dashed #f44336; 
+    padding: 8px 15px; border-radius: 20px; color: #f44336; font-size: 1rem; 
+    cursor: pointer; box-shadow: 0 0 8px rgba(244, 67, 54, 0.4); 
+    font-family: 'MedievalSharp', 'Zhi Mang Xing'; transition: 0.2s;
+}
+.delete-potion-item::after { content: ' ✖'; font-size: 0.8rem; margin-left: 5px; }
+.delete-potion-item:hover { background: rgba(244, 67, 54, 0.3); }
 
 
 /* ================= 斬擊與燃燒特效 ================= */
@@ -191,7 +211,6 @@ h1, h2, h3, .text-yellow {
     40% { filter: brightness(1.5) sepia(1) hue-rotate(-30deg); transform: scale(0.95) skewX(-2deg); box-shadow: 0 0 30px #ff5722; }
     100% { filter: brightness(0) blur(5px); transform: scale(0.8) translateY(-20px); opacity: 0; }
 }
-
 
 /* ================= 雙重掉落浮動文字 ================= */
 .floating-text { 
@@ -213,21 +232,26 @@ h1, h2, h3, .text-yellow {
     100% { transform: translate(40px, -90px) scale(1.2); opacity: 0; } 
 }
 
-
-/* 商店管理 */
+/* ================= 商店與統計系統 ================= */
 #shop-admin-top-form { border: 2px solid var(--magic-blue); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3); background: rgba(10, 15, 25, 0.85); }
 .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .shop-card { background: rgba(0,0,0,0.5); border: 1px solid var(--gold-dark); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
 
-/* 其他輔助 */
 .empty-state { text-align: center; color: var(--text-gray); font-style: italic; margin-top: 10px; font-size: 1rem; font-family: 'Zhi Mang Xing', cursive; letter-spacing: 2px; }
 .stat-row { display: flex; justify-content: space-between; font-size: 1rem; font-family: 'Cinzel', serif; }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .huge-number { font-size: 2rem; margin-top: 5px; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-.modal-content { width: 90%; max-width: 400px; border: 2px solid var(--gold); box-shadow: 0 0 30px rgba(255,215,0,0.3); }
 
-.flex-grow { flex: 1; } .w-20 { width: 80px; } .w-30 { width: 110px; } .w-full { width: 100%; }
+/* 浮動視窗 Modals */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+.modal-content { width: 90%; max-width: 400px; border: 2px solid var(--gold); box-shadow: 0 0 30px rgba(255,215,0,0.3); max-height: 90vh; overflow-y: auto; }
+
+/* 輔助與排版工具類別 (防跑版必備) */
+.flex-grow { flex: 1; min-width: 0; } /* 允許 Flex 內部元素縮小 */
+.w-20 { width: 80px; flex-shrink: 0; }
+.w-30 { width: 110px; flex-shrink: 0; } 
+.w-full { width: 100%; }
+
 .m-0 { margin: 0; } .mb-5 { margin-bottom: 5px; } .mb-10 { margin-bottom: 10px; } .mb-15 { margin-bottom: 15px; }
 .mt-5 { margin-top: 5px; } .mt-10 { margin-top: 10px; } .mt-15 { margin-top: 15px; } .mt-20 { margin-top: 20px; }
 .text-center { text-align: center; } .text-sm { font-size: 0.85rem; } 

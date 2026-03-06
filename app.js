@@ -22,7 +22,7 @@ let state = {
     isAdminMode: false
 };
 
-const CACHE_KEY = 'epic-quest-v4';
+const CACHE_KEY = 'epic-quest-v5';
 
 function loadFromStorage() {
     const saved = localStorage.getItem(CACHE_KEY);
@@ -359,6 +359,7 @@ function renderBosses() {
             </div>
         `).join('');
 
+        // 加入 flex-wrap 防止攻擊任務的輸入框在手機上跑版
         div.innerHTML = `
             <h2 class="text-center" style="color:var(--hp-low)">☠️ ${b.name}</h2>
             <div class="bar-container mt-10" style="border-color:var(--hp-low)"><div class="bar-fill" style="background:var(--hp-low); width:${hpPct}%"></div></div>
@@ -366,7 +367,7 @@ function renderBosses() {
             
             <div class="mt-15">${subtasksHtml}</div>
             
-            <div class="input-row mt-10">
+            <div class="input-row flex-wrap mt-10">
                 <input type="text" id="bst-title-${b.id}" placeholder="Attack Task" class="flex-grow epic-input">
                 <input type="number" id="bst-dmg-${b.id}" placeholder="DMG" value="50" class="w-20 epic-input">
                 <input type="number" id="bst-gold-${b.id}" placeholder="Gold" value="10" class="w-20 epic-input">
@@ -388,21 +389,42 @@ function addBossSubtask(bossId) {
 }
 
 // ==========================================
-// 5. Potions & Shop
+// 5. Potions & Shop (複合藥水管理)
 // ==========================================
 function renderPotions() {
+    // 渲染主畫面的藥水清單 (放大版)
     const list = document.getElementById('potion-list');
     list.innerHTML = state.potions.map(p => `
         <div class="potion-item" onclick="consumePotion(${p.hp})">${p.name} (+${p.hp})</div>
     `).join('');
+
+    // 渲染管理 Modal 內的藥水刪除清單 (紅色版)
+    const deleteList = document.getElementById('delete-potion-list');
+    if (deleteList) {
+        deleteList.innerHTML = state.potions.map(p => `
+            <div class="delete-potion-item" onclick="deletePotion('${p.id}')">${p.name} (+${p.hp})</div>
+        `).join('');
+    }
 }
 
 function addPotion() {
     const name = document.getElementById('new-potion-name').value;
     const hp = parseInt(document.getElementById('new-potion-hp').value);
     if(!name || !hp) return;
+    
     state.potions.push({ id: `p${Date.now()}`, name, hp });
-    closeModal('potion-modal'); saveToStorage(); renderPotions();
+    
+    // 清空輸入框，方便連續新增
+    document.getElementById('new-potion-name').value = '';
+    document.getElementById('new-potion-hp').value = '';
+    
+    saveToStorage(); renderPotions(); 
+    showToast("Potion Brewed!");
+}
+
+function deletePotion(id) {
+    state.potions = state.potions.filter(p => p.id !== id);
+    saveToStorage(); renderPotions();
 }
 
 function consumePotion(amount) {
@@ -413,6 +435,7 @@ function consumePotion(amount) {
     saveToStorage(); updateHUD();
 }
 
+// ---------------- 商店邏輯 ----------------
 function toggleAdminMode() { 
     state.isAdminMode = !state.isAdminMode; 
     const form = document.getElementById('shop-admin-top-form');
