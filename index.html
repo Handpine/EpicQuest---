@@ -196,6 +196,15 @@
                         <h2 class="text-yellow huge-number" id="stat-healed">0</h2>
                     </div>
                 </div>
+
+                <div class="divider mt-15"></div>
+                <div class="text-center mt-10 mb-20">
+                    <h2 class="text-yellow">🛡️ Guild Status</h2>
+                    <p class="text-gray text-sm mt-5 mb-10" id="auth-status-text">Not logged in (Local Save Only)</p>
+                    <button id="btn-show-login" class="btn-primary w-full" onclick="openModal('auth-modal')">Link to Cloud Database</button>
+                    <button id="btn-logout" class="btn-dashed w-full hidden" onclick="handleLogout()">Leave Guild (Logout)</button>
+                </div>
+
             </div>
         </main>
 
@@ -311,12 +320,32 @@
             </div>
         </div>
 
+        <div id="auth-modal" class="modal-overlay hidden" onclick="if(event.target === this) closeModal('auth-modal')">
+            <div class="modal-content panel auth-panel" style="border: 2px solid var(--magic-blue); box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);">
+                <div class="flex-between">
+                    <h2 class="text-yellow" style="font-family: 'Cinzel'; text-shadow: 0 0 10px var(--magic-blue);">🏰 The Heroes' Guild</h2>
+                    <span class="pointer text-gray" onclick="closeModal('auth-modal')">✕</span>
+                </div>
+                <div class="divider" style="background: linear-gradient(90deg, transparent, var(--magic-blue), transparent);"></div>
+                
+                <p class="text-center text-gray text-sm mt-10 mb-15">Awaken your hero to sync your epic tales across the realm. Your legacy awaits.</p>
+                
+                <input type="email" id="auth-email" placeholder="Hero's Email" class="w-full mt-10 epic-input">
+                <input type="password" id="auth-password" placeholder="Secret Passphrase" class="w-full mt-10 epic-input">
+                
+                <div class="flex-row mt-15">
+                    <button class="btn-primary flex-grow" style="background: linear-gradient(to bottom, #004d40, #00251a); border-color: var(--magic-blue); color: var(--magic-blue);" onclick="handleLogin()">⚔️ Enter Guild</button>
+                    <button class="btn-dashed flex-grow" onclick="handleSignUp()">✒️ Forge Contract</button>
+                </div>
+            </div>
+        </div>
+
         <div id="epic-toast" class="toast hidden"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // !! 導師提示：請一定要把這裡換成你專案的 URL 和 Anon Key !!
+        // !! 導師提示：保留了你專案的 URL 和 Anon Key !!
         const SUPABASE_URL = 'https://rusnrvsoglpprwltqcnr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1c25ydnNvZ2xwcHJ3bHRxY25yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDU3MzUsImV4cCI6MjA4NjI4MTczNX0.Gj0iJKduA2NuwNiR7-Se7J6cza201DAiWBRkv8KyMjo';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

@@ -22,8 +22,8 @@ let state = {
     isAdminMode: false
 };
 
-// 升級 Cache 版本，確保結構更新
-const CACHE_KEY = 'epic-quest-v12';
+// 升級 Cache 版本，強制更新
+const CACHE_KEY = 'epic-quest-v13';
 
 // 月曆專用全域變數
 let currentCalDate = new Date();
@@ -44,7 +44,6 @@ function getWeekIdentifier() {
 // 🌟 雲端同步與 Life Progress 聯動核心 🌟
 // ==========================================
 
-// 取得今天的 date_key (對齊 Life Progress 格式 YYYY-MM-DD)
 function getTodayDateKey() {
     const d = new Date();
     const year = d.getFullYear();
@@ -53,15 +52,13 @@ function getTodayDateKey() {
     return `${year}-${month}-${day}`;
 }
 
-// ✨ 魔法：將動作寫入 Life Progress 的 Plan 欄位
 async function appendToLifeProgressPlan(itemName) {
     const todayKey = getTodayDateKey();
     console.log(`🔮 嘗試將 [${itemName}] 寫入 Life Progress (${todayKey})...`);
 
     try {
         const { data: { session } } = await supabase.auth.getSession();
-        // 如果需要登入才能寫入，確保有 session (視你的 Life Progress 權限設定而定)
-        // 如果報權限錯誤，通常是因為這邊抓不到 Auth
+        // 若 Life Progress 需要驗證，這裡會確認是否已登入
 
         const { data: entry, error: fetchError } = await supabase
             .from('entries')
@@ -74,7 +71,6 @@ async function appendToLifeProgressPlan(itemName) {
         let newPlan = `- ${itemName}`;
         
         if (entry) {
-            // 原本有內容的話，確保乾淨地換行再加入新列點
             const currentPlan = entry.plan || "";
             newPlan = currentPlan.trim() ? `${currentPlan}\n- ${itemName}` : `- ${itemName}`;
             
@@ -83,7 +79,6 @@ async function appendToLifeProgressPlan(itemName) {
                 .update({ plan: newPlan, updated_at: Date.now() })
                 .eq('id', entry.id);
         } else {
-            // 今天還沒寫日記，建立一筆新的 (預設 type 為 daily)
             await supabase
                 .from('entries')
                 .insert([{
@@ -95,11 +90,10 @@ async function appendToLifeProgressPlan(itemName) {
         }
         console.log("✅ Life Progress 寫入成功！");
     } catch (err) {
-        console.warn("❌ 聯動 Life Progress 失敗 (請確認是否已登入 Supabase 或網路異常):", err);
+        console.warn("❌ 聯動 Life Progress 失敗 (可能未登入或無權限):", err);
     }
 }
 
-// 極簡儲存原則：將狀態儲存至雲端，覆蓋舊檔
 async function saveToCloud() {
     try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -117,7 +111,6 @@ async function saveToCloud() {
     }
 }
 
-// 啟動時從雲端讀取最新狀態
 async function loadFromCloud() {
     try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -139,10 +132,78 @@ async function loadFromCloud() {
     return false;
 }
 
-// 攔截儲存動作：本機存一份，雲端也非同步推一份
 function saveToStorage() {
     localStorage.setItem(CACHE_KEY, JSON.stringify(state));
-    saveToCloud(); // 背景靜默上傳，不卡頓 UI
+    saveToCloud(); // 背景靜默上傳
+}
+
+// ==========================================
+// 🔐 英雄公會身分驗證 (Supabase Auth)
+// ==========================================
+
+async function handleSignUp() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { showToast("⚠️ Email and Password required!"); return; }
+
+    showToast("⏳ Sealing your fate...");
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    
+    if (error) {
+        showToast(`❌ Error: ${error.message}`);
+    } else {
+        showToast("✨ Guild Contract Signed! You can now login.");
+    }
+}
+
+async function handleLogin() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { showToast("⚠️ Email and Password required!"); return; }
+
+    showToast("⏳ Channeling magic...");
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+        showToast(`❌ Error: ${error.message}`);
+    } else {
+        closeModal('auth-modal');
+        showToast("🔮 Welcome back, Hero!");
+        document.getElementById('auth-password').value = ''; // 安全清空密碼
+        checkAuthAndUpdateUI(); // 更新介面狀態
+        
+        // 登入後自動從雲端拉取最新進度覆蓋本機
+        const loaded = await loadFromCloud();
+        if (loaded) {
+            renderAllQuests(); renderBosses(); renderShop(); renderPotions(); updateHUD();
+            showToast("☁️ Cloud state synced!");
+        }
+    }
+}
+
+async function handleLogout() {
+    await supabase.auth.signOut();
+    showToast("💨 You have left the guild.");
+    checkAuthAndUpdateUI();
+}
+
+async function checkAuthAndUpdateUI() {
+    const { data: { session } } = await supabase.auth.getSession();
+    const statusText = document.getElementById('auth-status-text');
+    const btnLogin = document.getElementById('btn-show-login');
+    const btnLogout = document.getElementById('btn-logout');
+
+    if (session) {
+        statusText.innerText = `Hero Soul Bound: ${session.user.email}`;
+        statusText.style.color = "var(--magic-blue)";
+        if(btnLogin) btnLogin.classList.add('hidden');
+        if(btnLogout) btnLogout.classList.remove('hidden');
+    } else {
+        statusText.innerText = "Not logged in (Local Save Only)";
+        statusText.style.color = "var(--text-gray)";
+        if(btnLogin) btnLogin.classList.remove('hidden');
+        if(btnLogout) btnLogout.classList.add('hidden');
+    }
 }
 
 
@@ -607,6 +668,10 @@ document.getElementById('diff-slider').addEventListener('input', (e) => { state.
 
 // ✨ 非同步啟動器：遊戲載入時優先嘗試從雲端拿取最新進度
 window.onload = async () => {
+    
+    // 優先檢查認證狀態，並更新 Profile UI
+    await checkAuthAndUpdateUI();
+
     const isCloudLoaded = await loadFromCloud();
     if (!isCloudLoaded) {
         // 如果還沒登入、網路斷掉，或是雲端沒存檔，就無痛使用本地快取
