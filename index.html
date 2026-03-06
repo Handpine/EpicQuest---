@@ -39,7 +39,6 @@
         </header>
 
         <main id="main-content">
-            
             <div id="page-quests" class="page-content active">
                 <h1 class="page-title text-yellow">📜 Tavern Bounty Board</h1>
                 <div class="divider"></div>
@@ -131,9 +130,7 @@
             <div id="page-bosses" class="page-content">
                 <h1 class="page-title text-yellow">🐉 Epic Boss Battles</h1>
                 <div class="divider"></div>
-                
                 <button class="btn-dashed w-full mt-10" onclick="openModal('boss-modal')">☠️ Summon New Boss</button>
-                
                 <div id="boss-list" class="list-container mt-15 future-list-group"></div>
                 <div id="empty-boss" class="empty-state mt-15">No active boss battles...</div>
             </div>
@@ -154,7 +151,6 @@
                     <input type="text" id="add-item-desc" placeholder="Description (Optional)" class="w-full mb-10 epic-input">
                     <button class="btn-primary w-full" onclick="addNewShopItem()">Create Item</button>
                 </div>
-
                 <div id="shop-grid" class="shop-grid mt-10"></div>
             </div>
 
@@ -201,7 +197,6 @@
                     </div>
                 </div>
             </div>
-
         </main>
 
         <nav class="bottom-nav">
@@ -219,13 +214,11 @@
                     <span class="pointer text-gray" onclick="closeModal('calendar-modal')">✕</span>
                 </div>
                 <div class="divider"></div>
-                
                 <div class="calendar-header flex-between mb-10 mt-10">
                     <button class="btn-icon" style="width:30px; height:30px; font-size:1rem;" onclick="changeMonth(-1)">◀</button>
                     <h3 id="cal-month-year" class="text-yellow">Month Year</h3>
                     <button class="btn-icon" style="width:30px; height:30px; font-size:1rem;" onclick="changeMonth(1)">▶</button>
                 </div>
-                
                 <div class="calendar-grid">
                     <div class="cal-day-name">Su</div><div class="cal-day-name">Mo</div><div class="cal-day-name">Tu</div>
                     <div class="cal-day-name">We</div><div class="cal-day-name">Th</div><div class="cal-day-name">Fr</div><div class="cal-day-name">Sa</div>
@@ -241,7 +234,6 @@
                     <span class="pointer text-gray" onclick="closeModal('manage-potions-modal')">✕</span>
                 </div>
                 <div class="divider"></div>
-                
                 <div class="mt-10">
                     <h3 class="text-yellow text-sm mb-5">Brew New Potion</h3>
                     <div class="input-row flex-wrap">
@@ -250,9 +242,7 @@
                         <button class="btn-icon" onclick="addPotion()">⚔️</button>
                     </div>
                 </div>
-
                 <div class="divider-thin mt-15 mb-10"></div>
-                
                 <div class="mt-10">
                     <h3 class="text-yellow text-sm mb-5">Discard Potions (Click to delete)</h3>
                     <div id="delete-potion-list" class="list-container flex-wrap" style="max-height: 150px; overflow-y: auto;">
@@ -324,6 +314,13 @@
         <div id="epic-toast" class="toast hidden"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // !! 導師提示：請一定要把這裡換成你專案的 URL 和 Anon Key !!
+        const SUPABASE_URL = 'https://rusnrvsoglpprwltqcnr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1c25ydnNvZ2xwcHJ3bHRxY25yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MDU3MzUsImV4cCI6MjA4NjI4MTczNX0.Gj0iJKduA2NuwNiR7-Se7J6cza201DAiWBRkv8KyMjo';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
