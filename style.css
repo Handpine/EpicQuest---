@@ -108,22 +108,81 @@ h1, h2, h3, .text-yellow {
 .epic-input:focus { background: rgba(0, 0, 0, 0.7); border-color: var(--gold); box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
 .epic-input::placeholder { color: rgba(255, 215, 0, 0.3); }
 
-/* ✨ 史詩魔法下拉選單 ✨ */
-select.epic-input {
-    appearance: none; -webkit-appearance: none; /* 移除原生樣式 */
+/* ✨ 史詩自訂下拉選單 (Epic Custom Select) ✨ */
+.custom-select-container {
+    position: relative;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.custom-select-display {
+    /* 繼承 epic-input 外觀，加上黃金下拉箭頭 SVG */
     background-color: rgba(15, 10, 5, 0.9);
-    /* 自訂黃金下拉箭頭 SVG */
     background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffd700%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
     background-repeat: no-repeat;
     background-position: right 10px top 50%;
     background-size: 12px auto;
     padding-right: 30px; /* 留空間給箭頭 */
-    text-shadow: 1px 1px 3px black;
-    box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.15);
-    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
 }
-select.epic-input option {
-    background-color: #1a110a; color: var(--gold); text-shadow: none; font-family: 'Noto Serif TC', serif;
+
+.custom-options-panel {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    z-index: 2000;
+    /* 嚴格使用 .png 羊皮紙材質 */
+    background-image: url('parchment.png');
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #5c3a21;
+    border-radius: 4px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.9), inset 0 0 15px rgba(62, 39, 35, 0.6);
+    overflow: hidden;
+    animation: unrollScroll 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    transform-origin: top; /* 確保動畫是從上方往下展開 */
+}
+
+@keyframes unrollScroll {
+    0% { transform: scaleY(0); opacity: 0; }
+    100% { transform: scaleY(1); opacity: 1; }
+}
+
+.custom-option {
+    padding: 12px 15px;
+    color: #1a0f08; /* 深色墨水字體 */
+    font-family: 'Cinzel', 'Noto Serif TC', serif;
+    font-weight: 900;
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba(92, 64, 55, 0.3);
+    transition: all 0.2s ease;
+    text-shadow: 0 0 1px rgba(255,255,255,0.3);
+}
+
+.custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-option:hover, .custom-option:active {
+    background: rgba(0, 229, 255, 0.15); /* 魔法藍色高光 */
+    color: #000;
+    box-shadow: inset 0 0 10px rgba(0, 229, 255, 0.3);
+    padding-left: 20px; /* 點擊/懸停時稍微右移的動態感 */
+}
+
+.custom-option.magic-option {
+    color: #00332c;
+    background: rgba(0, 229, 255, 0.05);
+    animation: magicPulseText 2s infinite alternate;
+}
+
+@keyframes magicPulseText {
+    0% { text-shadow: 0 0 5px var(--magic-blue); }
+    100% { text-shadow: 0 0 12px var(--magic-blue), 0 0 2px var(--magic-blue); color: #001a16; }
 }
 
 .btn-primary {

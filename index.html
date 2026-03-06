@@ -88,15 +88,23 @@
                 <div class="divider"></div>
                 <div class="input-group mt-10">
                     <input type="text" id="prophecy-title" placeholder="Task Name" class="w-full epic-input mb-5">
-                    <div class="input-row flex-wrap">
+                    <div class="input-row flex-wrap" style="position: relative;">
                         <input type="number" id="prophecy-gold" placeholder="Gold" class="w-20 epic-input">
-                        <select id="prophecy-deadline" class="flex-grow epic-input" onchange="checkCustomDate(this.value)">
-                            <option value="eternal">∞ Eternal</option>
-                            <option value="7">1 Week</option>
-                            <option value="14">2 Weeks</option>
-                            <option value="30">1 Month</option>
-                            <option value="custom">✨ Unveil Destiny...</option>
-                        </select>
+                        
+                        <div class="custom-select-container flex-grow">
+                            <div id="prophecy-deadline-display" class="epic-input custom-select-display" onclick="toggleCustomSelect()">
+                                ∞ Eternal
+                            </div>
+                            <input type="hidden" id="prophecy-deadline" value="eternal">
+                            
+                            <div id="prophecy-options-menu" class="custom-options-panel hidden">
+                                <div class="custom-option" onclick="selectProphecyOption('eternal', '∞ Eternal')">∞ Eternal</div>
+                                <div class="custom-option" onclick="selectProphecyOption('7', '1 Week')">1 Week</div>
+                                <div class="custom-option" onclick="selectProphecyOption('14', '2 Weeks')">2 Weeks</div>
+                                <div class="custom-option" onclick="selectProphecyOption('30', '1 Month')">1 Month</div>
+                                <div class="custom-option magic-option" id="custom-date-option-text" onclick="selectProphecyOption('custom', '✨ Unveil Destiny...')">✨ Unveil Destiny...</div>
+                            </div>
+                        </div>
                         <input type="hidden" id="custom-date-input">
                         <button class="btn-icon" onclick="addQuest('prophecy')">⚔️</button>
                     </div>

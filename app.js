@@ -23,7 +23,7 @@ let state = {
 };
 
 // 升級 Cache 版本，強制瀏覽器抓取新代碼
-const CACHE_KEY = 'epic-quest-v7';
+const CACHE_KEY = 'epic-quest-v8';
 
 // 月曆專用全域變數
 let currentCalDate = new Date();
@@ -118,7 +118,7 @@ function updateTimer() {
 }
 
 // ==========================================
-// 3. 任務與史詩月曆系統 (Quests & Calendar)
+// 3. 任務、史詩下拉選單與月曆系統 
 // ==========================================
 
 function toggleActiveQuestEdit() {
@@ -128,13 +128,45 @@ function toggleActiveQuestEdit() {
     btn.classList.toggle('active');
 }
 
-// 新增：神聖預言書 (Future 頁籤) 編輯開關
 function toggleFutureEdit() {
     const lists = document.querySelectorAll('.future-list-group');
     const btn = document.getElementById('toggle-future-edit-btn');
     lists.forEach(list => list.classList.toggle('edit-mode-on'));
     if(btn) btn.classList.toggle('active');
 }
+
+// ✨ 史詩自訂下拉選單控制 ✨
+function toggleCustomSelect() {
+    const menu = document.getElementById('prophecy-options-menu');
+    menu.classList.toggle('hidden');
+}
+
+function selectProphecyOption(value, text) {
+    const hiddenInput = document.getElementById('prophecy-deadline');
+    const display = document.getElementById('prophecy-deadline-display');
+    const menu = document.getElementById('prophecy-options-menu');
+
+    if (value !== 'custom') {
+        hiddenInput.value = value;
+        display.innerText = text;
+        menu.classList.add('hidden');
+        pendingCustomDateStr = null; // 切換回一般選項時，清空自訂日期記憶
+    } else {
+        hiddenInput.value = 'custom';
+        menu.classList.add('hidden');
+        checkCustomDate('custom'); // 喚醒月曆
+    }
+}
+
+// 監聽全局點擊，實作「點擊選單外部自動關閉」防呆
+document.addEventListener('click', function(event) {
+    const container = document.querySelector('.custom-select-container');
+    const menu = document.getElementById('prophecy-options-menu');
+    if (container && !container.contains(event.target) && menu && !menu.classList.contains('hidden')) {
+        menu.classList.add('hidden');
+    }
+});
+
 
 // 攔截原生 Date，喚醒史詩月曆
 function checkCustomDate(val) {
@@ -143,7 +175,7 @@ function checkCustomDate(val) {
         renderCalendar();
         openModal('calendar-modal');
     } else {
-        pendingCustomDateStr = null; // 取消自訂時清空暫存
+        pendingCustomDateStr = null; 
     }
 }
 
@@ -178,16 +210,13 @@ function changeMonth(offset) {
 }
 
 function selectCalDate(year, month, day) {
-    // 修復 Null Bug：正確格式化並保存日期
     pendingCustomDateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     renderCalendar(); // 重新渲染套用發光特效
     
-    // 動態更新下拉選單文字，讓玩家知道已經封印成功
-    const selectEl = document.getElementById('prophecy-deadline');
-    const customOpt = selectEl.querySelector('option[value="custom"]');
-    if (customOpt) customOpt.text = `✨ Sealed: ${pendingCustomDateStr}`;
+    // ✨ 動態更新自訂下拉選單顯示文字，取代原本抓原生 option 的寫法
+    const display = document.getElementById('prophecy-deadline-display');
+    if (display) display.innerText = `✨ Sealed: ${pendingCustomDateStr}`;
     
-    // 延遲 350ms 讓玩家欣賞特效，並傳入 true 告訴 closeModal 這是「確認送出」不要清空資料
     setTimeout(() => {
         closeModal('calendar-modal', true); 
         showToast(`Date Sealed!`);
@@ -203,6 +232,7 @@ function addQuest(type) {
     else if(type === 'backlog') { titleInput = 'backlog-title'; }
     else if(type === 'prophecy') { 
         titleInput = 'prophecy-title'; goldInput = 'prophecy-gold'; 
+        // 抓取我們綁定的隱藏 input 值
         deadline = document.getElementById('prophecy-deadline').value;
         const d = new Date();
         
@@ -213,6 +243,7 @@ function addQuest(type) {
             if(!pendingCustomDateStr) { 
                 showToast("⚠️ Please select a date from the calendar!"); 
                 document.getElementById('prophecy-deadline').value = 'eternal';
+                document.getElementById('prophecy-deadline-display').innerText = '∞ Eternal';
                 return; 
             }
             deadlineDate = pendingCustomDateStr;
@@ -228,12 +259,10 @@ function addQuest(type) {
     document.getElementById(titleInput).value = '';
     if(goldInput) document.getElementById(goldInput).value = '';
     
-    // 新增預言任務後，乾淨地重置下拉選單
+    // 新增預言任務後，乾淨地重置自訂下拉選單
     if(type === 'prophecy') {
-        const selectEl = document.getElementById('prophecy-deadline');
-        selectEl.value = 'eternal';
-        const customOpt = selectEl.querySelector('option[value="custom"]');
-        if (customOpt) customOpt.text = `✨ Unveil Destiny...`;
+        document.getElementById('prophecy-deadline').value = 'eternal';
+        document.getElementById('prophecy-deadline-display').innerText = '∞ Eternal';
         pendingCustomDateStr = null;
     }
 
@@ -278,7 +307,6 @@ function renderQuestList(type, containerId, emptyId) {
             extraInfo = `<br><span class="text-gray text-sm">⏳ ${daysLeft} days left</span>`;
         }
 
-        // 圖標大升級：改用 📯 戰爭號角作為喚醒/轉移按鈕
         div.innerHTML = `
             <div class="quest-content-row">
                 <div>${headerHtml}${q.title} ${extraInfo}</div>
@@ -573,16 +601,15 @@ function buyItem(cost) { if (state.hero.gold >= cost) { state.hero.gold -= cost;
 // ==========================================
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 
-// 強化版：處理點擊外部關閉時的防呆機制
 function closeModal(id, isSubmit = false) { 
     document.getElementById(id).classList.add('hidden'); 
     
-    // 如果是取消/點擊外部關閉月曆，確保下拉選單復原為 eternal，避免 null 錯誤
+    // ✨ 如果是取消/點擊外部關閉月曆，確保自訂顯示的文字退回為 Eternal
     if(id === 'calendar-modal' && !isSubmit) {
         if (!pendingCustomDateStr) {
             document.getElementById('prophecy-deadline').value = 'eternal';
-            const customOpt = document.querySelector('#prophecy-deadline option[value="custom"]');
-            if(customOpt) customOpt.text = '✨ Unveil Destiny...';
+            const display = document.getElementById('prophecy-deadline-display');
+            if(display) display.innerText = '∞ Eternal';
         }
     }
 }
