@@ -223,24 +223,55 @@ h1, h2, h3, .text-yellow {
 .action-icon { font-size: 1.3rem; cursor: pointer; opacity: 0.85; transition: 0.2s; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5)); }
 .action-icon:hover { opacity: 1; transform: scale(1.2); }
 
-/* 羽毛筆與神聖預言書 編輯模式切換按鈕 */
+/* 羽毛筆、神聖預言書與 Boss 雙劍 編輯模式切換按鈕 */
 .edit-toggle-icon { font-size: 1.6rem; transition: 0.3s; filter: drop-shadow(0 0 5px var(--gold)); }
 .edit-toggle-icon.active { transform: scale(1.1) rotate(15deg); filter: drop-shadow(0 0 15px #ff9800); }
 
-/* 隱藏 Active Quest 的編輯/刪除按鈕 */
+/* ✨ 核心升級：統一管理所有列表的 Edit 顯示邏輯 (加入 time-action 與 boss-list-group) */
 #active-quest-list .quest-card .edit-action,
-#active-quest-list .quest-card .delete-action { display: none; }
-#active-quest-list.edit-mode-on .quest-card .edit-action,
-#active-quest-list.edit-mode-on .quest-card .delete-action { display: inline-block; animation: fadeIn 0.3s forwards; }
-
-/* ✨ 隱藏 Future / Boss 頁面的按鈕，直到點擊預言書 ✨ */
+#active-quest-list .quest-card .delete-action,
+#active-quest-list .quest-card .time-action,
 .future-list-group .quest-card .edit-action,
 .future-list-group .quest-card .delete-action,
-.future-list-group .quest-card .transfer-action { display: none; }
+.future-list-group .quest-card .transfer-action,
+.future-list-group .quest-card .time-action,
+.boss-list-group .quest-card .edit-action,
+.boss-list-group .quest-card .delete-action,
+.boss-list-group .quest-card .transfer-action,
+.boss-list-group .quest-card .time-action { 
+    display: none; 
+}
 
+#active-quest-list.edit-mode-on .quest-card .edit-action,
+#active-quest-list.edit-mode-on .quest-card .delete-action,
+#active-quest-list.edit-mode-on .quest-card .time-action,
 .future-list-group.edit-mode-on .quest-card .edit-action,
 .future-list-group.edit-mode-on .quest-card .delete-action,
-.future-list-group.edit-mode-on .quest-card .transfer-action { display: inline-block; animation: fadeIn 0.3s forwards; }
+.future-list-group.edit-mode-on .quest-card .transfer-action,
+.future-list-group.edit-mode-on .quest-card .time-action,
+.boss-list-group.edit-mode-on .quest-card .edit-action,
+.boss-list-group.edit-mode-on .quest-card .delete-action,
+.boss-list-group.edit-mode-on .quest-card .transfer-action,
+.boss-list-group.edit-mode-on .quest-card .time-action { 
+    display: inline-block; animation: fadeIn 0.3s forwards; 
+}
+
+
+/* ✨ 新增：Boss 面板的放棄與編輯標題管理區 */
+.boss-header-actions { 
+    display: none; 
+    justify-content: center; 
+    gap: 20px; 
+    margin-top: 15px; 
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 0, 0, 0.3);
+}
+.boss-list-group.edit-mode-on .boss-header-actions { 
+    display: flex; animation: fadeIn 0.3s forwards; 
+}
+
+.surrender-action { font-size: 1.8rem; cursor: pointer; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5)); transition: transform 0.2s; }
+.surrender-action:hover { transform: scale(1.2) rotate(-10deg); filter: drop-shadow(0 0 15px #ff5252); }
 
 
 .boss-tag { background: #5c3a21; color: var(--gold); font-size: 0.8rem; padding: 2px 8px; border-radius: 2px; margin-bottom: 5px; display: inline-block; box-shadow: 0 0 8px rgba(255,0,0,0.6); border: 1px solid #8a0303; font-family: 'Cinzel', serif; }
@@ -366,6 +397,9 @@ h1, h2, h3, .text-yellow {
 /* 浮動視窗 Modals */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
 .modal-content { width: 90%; max-width: 400px; border: 2px solid var(--gold); box-shadow: 0 0 30px rgba(255,215,0,0.3); max-height: 90vh; overflow-y: auto; }
+
+/* ✨ 確保月曆視窗在所有 Modal 之上 (解決多重視窗重疊) */
+#calendar-modal { z-index: 1100; }
 
 /* 🏰 登入/註冊專屬公會面板 (Auth Panel) */
 .auth-panel {
